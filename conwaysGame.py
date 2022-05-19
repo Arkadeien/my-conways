@@ -1,34 +1,14 @@
-'''
-Conways Game is a commandline based conways game of life.
-This the thrid revision:
-Plan:
-	Step-one: Start with a command line based verion of conways game of life.
-	+ This will require:
-		-Ability to create, edit, save and load grids.
-		-Ability to save and load a recorded set of frames
+from math import gamma
 
-	Step-Two: Create a GUI
-	+Must be simple
-	+incude a play button
-
-'''
 import random
 import tkinter as tk
 from PIL import Image, ImageTk, ImageDraw
-
-import threading
 
 class Board:
 	def __init__(self, columns:int = 10, rows:int = 10):
 		self.columns:int = columns
 		self.rows:int = rows
-		self.grid:dict = self.new_grid(rand = True)
-
-	# def flip_cell_state(self, pos):
-	# 	if self.grid[pos]:
-	# 		self.grid[pos] = False
-	# 	else:
-	# 		self.grid[pos] = True
+		self.grid:dict = self.new_grid()
 
 	def count_alive(self, pos:tuple) -> int():
 		# Returns the total cells that are alive around a givin point (x, y)
@@ -44,7 +24,7 @@ class Board:
 		
 		return sum(self.grid[(bor[0] % self.columns, bor[1] % self.rows)] for bor in neighbors)
 		
-	def quick_germ(self) -> dict():
+	def quick_germ(self) -> dict:
 		next_gen = {}
 		for pos in self.grid:
 			live_neighbors = self.count_alive(pos)
@@ -59,33 +39,38 @@ class Board:
 	def change_cell(self, pos):
 		self.grid[pos] = not self.grid[pos]
 
-	def step(self, times = 1):
+	def step(self, times: int = 1):
 		''' Goes through times generations'''
 		for _ in range(times):
 			next_grid = self.quick_germ()
 			self.grid = next_grid
 
-	def export_board(self):
-		with open('saved_board.txt', 'w') as f:
-			for k, v in self.grid.items():
-				f.write(f'"{k}" = "{v}"')
-
-
+	# def export_board(self):
+	# 	with open('saved_board.txt', 'w') as f:
+	# 		for k, v in self.grid.items():
+	# 			f.write(f'"{k}" = "{v}"')
 
 	def clear_grid(self):
 		self.grid = None
 		self.grid = self.new_grid()
 
-	def new_grid(self, rand:bool = False) -> dict():
+	def new_grid(self) -> dict:
 		''' Returns a dict of grid	
-			rand: If true will return a grid of random elements of True or False
-		'''
-		for col in range(self.columns):		
-			if rand == False:
-				return {(col, row): False for row in range(self.rows) for col in range(self.columns)}
-			else:
-				is_alive = random.choice
-				return {(col, row): is_alive([True , False]) for row in range(self.rows) for col in range(self.columns)}
+			rand: If true will return a grid of random elements of True or False'''	
+		grid = dict()
+		for row in range(self.rows):
+			for col in range(self.columns):
+				grid[(row, col)] = False	
+		
+		return grid
+
+	def new_random_grid(self) -> dict:
+		''' Returns a randomized grid'''	
+		grid = dict()
+		for row in range(self.rows):
+			for col in range(self.columns):
+				grid[(row, col)] = random.choice([True, False])
+		return grid
 
 	def show_to_console(self):
 		for x in range(self.columns):
@@ -93,14 +78,13 @@ class Board:
 			for y in range(self.rows):
 				print(int(self.grid[(x, y)]), end = ' ')
 
-	def living_cells(self) -> dict():
-		''' return a dict of living cells to draw'''
+	def living_cells(self) -> dict:
+		''' return a dict of living cells'''
 		
 		return {pos: state for pos, state in self.grid.items() if state == True}
 
 
-
-class Window:
+class Game:
 	def __init__(self, board: Board):
 		self.root = tk.Tk()
 
@@ -124,7 +108,7 @@ class Window:
 		self.draw()
 
 		#Buttons and Bindings
-		self.canvas.bind('<Button-1>', self.flip_cell)
+		self.canvas.bind('<Button-1>', self.change_cell)
 
 		self.play_button = tk.Button(self.root, text = 'Play', command = self.play)
 		self.stop_button = tk.Button(self.root, text = 'Stop', command = self.stop)
@@ -134,6 +118,8 @@ class Window:
 		self.stop_button.pack()
 		self.clear_button.pack()
 		self.save_button.pack()
+
+		self.run()
 
 	def clear_board(self):
 		self.board.clear_grid()
@@ -155,7 +141,7 @@ class Window:
 			self.draw()
 			self.root.after(10, self.flip)
 
-	def flip_cell(self, event):
+	def change_cell(self, event):
 		x = event.x//self.pen_size
 		y = event.y//self.pen_size
 		self.board.change_cell((x, y))
@@ -179,13 +165,11 @@ class Window:
 		''' Runs the mainloop'''
 		self.root.mainloop()
 
-class App:
-	def __init__(self, columns, rows):
-		self.game = Board(columns, rows)
-		self.game_window = Window(self.game)
 
-		self.game_window.run()
+def main():
+	board = Board(100, 100)
+	game = Game(board)
+
 
 if __name__ == '__main__':
-
-	game = App(100, 100)
+	main()
